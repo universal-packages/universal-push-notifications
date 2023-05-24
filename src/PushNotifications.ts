@@ -19,8 +19,8 @@ export default class PushNotifications extends EventEmitter {
   }
 
   public prepare(): void {
-    if (this.options.firebase) this.prepareFirebase()
-    if (this.options.apns) this.prepareApns()
+    if (this.options.firebase?.credentialLocation || this.options.firebase?.credential) this.prepareFirebase()
+    if (this.options.apns?.p8CertificateLocation || this.options.apns?.p8Certificate) this.prepareApns()
 
     if (this.capabilities.length === 0) {
       this.emit('warning', 'No capabilities were found. Please check your configuration.')
