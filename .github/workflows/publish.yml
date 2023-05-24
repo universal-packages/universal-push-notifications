@@ -1,0 +1,26 @@
+name: Publish package
+on:
+  release:
+    types: [released]
+
+jobs:
+  build-and-publish:
+    name: Build and Publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          registry-url: https://registry.npmjs.org/
+
+      - run: npm install
+      - run: npm run test:full
+      - run: npm run build
+      - run: cp package.json dist
+      - run: cp README.md dist
+      - run: cp LICENSE.md dist
+      - run: npm publish --access public
+        working-directory: ./dist
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
