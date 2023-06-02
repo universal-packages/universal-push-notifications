@@ -1,6 +1,7 @@
-import { PushNotifications } from '../src'
 import admin from 'firebase-admin'
 import jwt from 'jsonwebtoken'
+
+import { PushNotifications } from '../src'
 import { fetch } from '../src/fetch'
 
 jest.useFakeTimers()

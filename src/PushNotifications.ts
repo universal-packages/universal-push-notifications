@@ -1,8 +1,9 @@
 import { checkFile } from '@universal-packages/fs-utils'
 import EventEmitter from 'events'
 import admin from 'firebase-admin'
-import jwt from 'jsonwebtoken'
 import fs from 'fs'
+import jwt from 'jsonwebtoken'
+
 import { Capability, PushNotification, PushNotificationsOptions } from './PushNotifications.types'
 import { fetch } from './fetch'
 
