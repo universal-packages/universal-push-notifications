@@ -25,7 +25,7 @@ jest.mock('http2', () => ({
   })
 }))
 
-describe('fetch', (): void => {
+describe(fetch, (): void => {
   it('does http2 stuff', async (): Promise<void> => {
     const response = await fetch('https://example.com', { method: 'POST', headers: { extra: 'header' }, body: 'body' })
 

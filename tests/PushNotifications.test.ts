@@ -33,7 +33,7 @@ jest.mock('../src/fetch', () => ({
   })
 }))
 
-describe('PushNotifications', (): void => {
+describe(PushNotifications, (): void => {
   it('initializes firebase if config provided', async (): Promise<void> => {
     const pushNotifications = new PushNotifications({ firebase: { credentialLocation: './tests/__fixtures__/credentials.json' } })
 
