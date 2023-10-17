@@ -115,9 +115,12 @@ export default class PushNotifications extends EventEmitter {
 
     this.refreshApnsToken()
 
-    this.refreshApnsTokenInterval = setInterval(() => {
-      this.refreshApnsToken()
-    }, 1000 * 60 * 50)
+    this.refreshApnsTokenInterval = setInterval(
+      () => {
+        this.refreshApnsToken()
+      },
+      1000 * 60 * 50
+    )
 
     this.capabilities.push('ios')
   }
