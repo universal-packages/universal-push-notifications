@@ -33,6 +33,9 @@
     "preset": "ts-jest",
     "collectCoverageFrom": [
       "src/**/*.ts"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.ts"
     ]
   },
   "prettier": {
