@@ -4,10 +4,12 @@ import admin from 'firebase-admin'
 import fs from 'fs'
 import jwt from 'jsonwebtoken'
 
-import { Capability, PushNotification, PushNotificationsOptions } from './PushNotifications.types'
+import { Capability, DryPush, PushNotification, PushNotificationsOptions } from './PushNotifications.types'
 import { fetch } from './fetch'
 
 export default class PushNotifications extends EventEmitter {
+  public static readonly dryPushes: DryPush[] = []
+
   public readonly options: PushNotificationsOptions
   public readonly capabilities: Capability[] = []
 
@@ -16,7 +18,7 @@ export default class PushNotifications extends EventEmitter {
 
   public constructor(options?: PushNotificationsOptions) {
     super()
-    this.options = { ...options }
+    this.options = { dryRun: process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development', ...options }
   }
 
   public prepare(): void {
@@ -24,7 +26,10 @@ export default class PushNotifications extends EventEmitter {
     if (this.options.apns?.p8CertificateLocation || this.options.apns?.p8Certificate) this.prepareApns()
 
     if (this.capabilities.length === 0) {
-      this.emit('warning', 'No capabilities were found. Please check your configuration.')
+      const event = { event: 'warning', message: 'No capabilities were found. Please check your configuration.' }
+
+      this.emit('*', event)
+      this.emit('warning', event)
     }
   }
 
@@ -34,7 +39,7 @@ export default class PushNotifications extends EventEmitter {
     }
   }
 
-  public async pushNotification(deviceToken: string[], notification: PushNotification): Promise<any> {
+  public async pushNotification(deviceToken: string[], notification: PushNotification): Promise<void> {
     const androidTokens = []
     const iosTokens = []
 
@@ -46,25 +51,26 @@ export default class PushNotifications extends EventEmitter {
       }
     }
 
-    let androidResult: string[] = []
-    let iosResult: string[] = []
-
     if (androidTokens.length > 0) {
       if (this.capabilities.includes('android')) {
-        androidResult = await this.sendAndroidNotification(androidTokens, notification)
+        await this.pushAndroidNotification(androidTokens, notification)
       } else {
-        this.emit('warning', 'Trying to send an Android notification, but no Android capabilities were found.')
+        const event = { event: 'warning', message: 'Trying to send an Android notification, but no Android capabilities were found.' }
+
+        this.emit('*', event)
+        this.emit('warning', event)
       }
     }
     if (iosTokens.length > 0) {
       if (this.capabilities.includes('ios')) {
-        iosResult = await this.sendIosNotification(iosTokens, notification)
+        await this.pushIosNotification(iosTokens, notification)
       } else {
-        this.emit('warning', 'Trying to send an iOS notification, but no iOS capabilities were found.')
+        const event = { event: 'warning', message: 'Trying to send an iOS notification, but no iOS capabilities were found.' }
+
+        this.emit('*', event)
+        this.emit('warning', event)
       }
     }
-
-    return [...androidResult, ...iosResult]
   }
 
   private async prepareFirebase(): Promise<void> {
@@ -132,72 +138,101 @@ export default class PushNotifications extends EventEmitter {
     this.apnsToken = jwt.sign(payload, this.options.apns.p8Certificate, headers)
   }
 
-  private async sendAndroidNotification(deviceTokens: string[], notification: PushNotification): Promise<any> {
-    const messages = []
+  private async pushAndroidNotification(deviceTokens: string[], notification: PushNotification): Promise<void> {
+    if (this.options.dryRun) {
+      for (let i = 0; i < deviceTokens.length; i++) {
+        PushNotifications.dryPushes.push({ instance: this, token: deviceTokens[i], notification, capability: 'android' })
 
-    for (let i = 0; i < deviceTokens.length; i++) {
-      messages.push({
-        token: deviceTokens[i],
+        const event = { event: 'push', payload: { capability: 'android', token: deviceTokens[i], notification } }
+
+        this.emit('*', event)
+        this.emit('push', event)
+      }
+    } else {
+      const messages = deviceTokens.map((token: string) => ({
+        token,
         notification: {
           title: notification.title,
           body: notification.body
         },
         data: notification.data
-      })
-    }
+      }))
 
-    const result = await admin.messaging().sendEach(messages)
+      const result = await admin.messaging().sendEach(messages)
 
-    for (let i = 0; i < result.responses.length; i++) {
-      const response = result.responses[i]
+      for (let i = 0; i < result.responses.length; i++) {
+        const response = result.responses[i]
 
-      if (response.error) {
-        this.emit('error', `Failed to send Android notification to ${messages[i].token}: ${response.error}`)
+        if (response.error) {
+          const event = { event: 'error', error: response.error, payload: { capability: 'android', token: messages[i].token, notification } }
+
+          this.emit('*', event)
+          this.emit('error', event)
+        } else {
+          const event = { event: 'push', payload: { capability: 'android', token: messages[i].token, notification } }
+
+          this.emit('*', event)
+          this.emit('push', event)
+        }
       }
     }
-
-    return result.responses.map((response) => response.messageId).filter(Boolean)
   }
 
-  private async sendIosNotification(deviceTokens: string[], notification: PushNotification): Promise<any> {
-    const host = this.options.apns.sandbox ? 'https://api.sandbox.push.apple.com/3/device/' : 'https://api.push.apple.com/3/device/'
-    const ids = []
+  private async pushIosNotification(deviceTokens: string[], notification: PushNotification): Promise<void> {
+    if (this.options.dryRun) {
+      for (let i = 0; i < deviceTokens.length; i++) {
+        PushNotifications.dryPushes.push({ instance: this, token: deviceTokens[i], notification, capability: 'ios' })
 
-    for (let i = 0; i < deviceTokens.length; i++) {
-      const token = deviceTokens[i]
+        const event = { event: 'push', payload: { capability: 'ios', token: deviceTokens[i], notification } }
 
-      const message = {
-        aps: {
-          alert: {
-            title: notification.title,
-            body: notification.body
+        this.emit('*', event)
+        this.emit('push', event)
+      }
+    } else {
+      const host = this.options.apns.sandbox ? 'https://api.sandbox.push.apple.com/3/device/' : 'https://api.push.apple.com/3/device/'
+      const ids = []
+
+      for (let i = 0; i < deviceTokens.length; i++) {
+        const token = deviceTokens[i]
+
+        const message = {
+          aps: {
+            alert: {
+              title: notification.title,
+              body: notification.body
+            },
+            sound: 'default',
+            badge: 1
           },
-          sound: 'default',
-          badge: 1
-        },
-        ...notification.data
+          ...notification.data
+        }
+
+        const response = await fetch(`${host}${token}`, {
+          method: 'POST',
+          headers: {
+            'apns-topic': this.options.apns.apnsTopic,
+            authorization: `bearer ${this.apnsToken}`
+          },
+          body: JSON.stringify(message)
+        })
+
+        const apnsId = response.headers['apns-id']
+
+        if (response.status !== 200) {
+          const error = new Error(JSON.parse(response.body).reason)
+          const event = { event: 'error', error, payload: { capability: 'ios', token, notification } }
+
+          this.emit('*', event)
+          this.emit('error', event)
+        } else {
+          const event = { event: 'push', payload: { capability: 'ios', token, notification } }
+
+          this.emit('*', event)
+          this.emit('push', event)
+        }
+
+        ids.push(apnsId)
       }
-
-      const response = await fetch(`${host}${token}`, {
-        method: 'POST',
-        headers: {
-          'apns-topic': this.options.apns.apnsTopic,
-          authorization: `bearer ${this.apnsToken}`
-        },
-        body: JSON.stringify(message)
-      })
-
-      const apnsId = response.headers['apns-id']
-
-      if (response.status !== 200) {
-        const error: any = JSON.parse(response.body)
-
-        this.emit('error', `Failed to send iOS notification to ${token}: ${error.reason}`)
-      }
-
-      ids.push(apnsId)
     }
-
-    return ids
   }
 }

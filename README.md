@@ -62,6 +62,8 @@ await pushNotifications.pushNotification([token], { title: 'Hello', body: 'World
     - **`authProviderX509CertUrl`** `String`
     - **`clientX509CertUrl`** `String`
     - **`universeDomain`** `String`
+- **`dryRun`** `Boolean`
+  Whether to send the notification to the devices or not. This still emits the `push` event.
 - **`apns`** `ApnsOptions`
   Include this if you want capabilities for iOS devices.
   - **`p8CertificateLocation`** `String`
@@ -101,6 +103,16 @@ Releases any resources used by the instance.
     The data to be sent with the notification.
 
 Sends the notifications to all devices, tokens can come from any android or iOS device.
+
+## Events
+
+`PushNotifications` will emit events as follow.
+
+```js
+expressApp.on('warning', (event) => console.log(event))
+expressApp.on('error', (event) => console.log(event))
+expressApp.on('push', (event) => console.log(event))
+```
 
 ## Typescript
 

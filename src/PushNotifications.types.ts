@@ -1,6 +1,17 @@
+import PushNotifications from './PushNotifications'
+
 export type Capability = 'ios' | 'android'
 
 export interface PushNotificationsOptions {
+  apns?: {
+    p8CertificateLocation?: string
+    p8Certificate?: string
+    teamId: string
+    keyId: string
+    sandbox?: boolean
+    apnsTopic: string
+  }
+  dryRun?: boolean
   firebase?: {
     credentialLocation?: string
     credential?: {
@@ -17,18 +28,17 @@ export interface PushNotificationsOptions {
       universeDomain: string
     }
   }
-  apns?: {
-    p8CertificateLocation?: string
-    p8Certificate?: string
-    teamId: string
-    keyId: string
-    sandbox?: boolean
-    apnsTopic: string
-  }
 }
 
 export interface PushNotification {
   title: string
   body: string
   data?: Record<string, any>
+}
+
+export interface DryPush {
+  instance: PushNotifications
+  notification: PushNotification
+  token: string
+  capability: Capability
 }
