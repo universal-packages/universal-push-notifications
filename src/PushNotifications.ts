@@ -1,5 +1,5 @@
+import { EventEmitter } from '@universal-packages/event-emitter'
 import { checkFile } from '@universal-packages/fs-utils'
-import EventEmitter from 'events'
 import admin from 'firebase-admin'
 import fs from 'fs'
 import jwt from 'jsonwebtoken'
@@ -26,10 +26,7 @@ export default class PushNotifications extends EventEmitter {
     if (this.options.apns?.p8CertificateLocation || this.options.apns?.p8Certificate) this.prepareApns()
 
     if (this.capabilities.length === 0) {
-      const event = { event: 'warning', message: 'No capabilities were found. Please check your configuration.' }
-
-      this.emit('*', event)
-      this.emit('warning', event)
+      this.emit('warning', { message: 'No capabilities were found. Please check your configuration.' })
     }
   }
 
@@ -55,20 +52,14 @@ export default class PushNotifications extends EventEmitter {
       if (this.capabilities.includes('android')) {
         await this.pushAndroidNotification(androidTokens, notification)
       } else {
-        const event = { event: 'warning', message: 'Trying to send an Android notification, but no Android capabilities were found.' }
-
-        this.emit('*', event)
-        this.emit('warning', event)
+        this.emit('warning', { message: 'Trying to send an Android notification, but no Android capabilities were found.' })
       }
     }
     if (iosTokens.length > 0) {
       if (this.capabilities.includes('ios')) {
         await this.pushIosNotification(iosTokens, notification)
       } else {
-        const event = { event: 'warning', message: 'Trying to send an iOS notification, but no iOS capabilities were found.' }
-
-        this.emit('*', event)
-        this.emit('warning', event)
+        this.emit('warning', { message: 'Trying to send an iOS notification, but no iOS capabilities were found.' })
       }
     }
   }
@@ -143,10 +134,7 @@ export default class PushNotifications extends EventEmitter {
       for (let i = 0; i < deviceTokens.length; i++) {
         PushNotifications.dryPushes.push({ instance: this, token: deviceTokens[i], notification, capability: 'android' })
 
-        const event = { event: 'push', payload: { capability: 'android', token: deviceTokens[i], notification } }
-
-        this.emit('*', event)
-        this.emit('push', event)
+        this.emit('push', { payload: { capability: 'android', token: deviceTokens[i], notification } })
       }
     } else {
       const messages = deviceTokens.map((token: string) => ({
@@ -164,15 +152,9 @@ export default class PushNotifications extends EventEmitter {
         const response = result.responses[i]
 
         if (response.error) {
-          const event = { event: 'error', error: response.error, payload: { capability: 'android', token: messages[i].token, notification } }
-
-          this.emit('*', event)
-          this.emit('error', event)
+          this.emit('error', { error: response.error as any as Error, payload: { capability: 'android', token: messages[i].token, notification } })
         } else {
-          const event = { event: 'push', payload: { capability: 'android', token: messages[i].token, notification } }
-
-          this.emit('*', event)
-          this.emit('push', event)
+          this.emit('push', { payload: { capability: 'android', token: messages[i].token, notification } })
         }
       }
     }
@@ -183,10 +165,7 @@ export default class PushNotifications extends EventEmitter {
       for (let i = 0; i < deviceTokens.length; i++) {
         PushNotifications.dryPushes.push({ instance: this, token: deviceTokens[i], notification, capability: 'ios' })
 
-        const event = { event: 'push', payload: { capability: 'ios', token: deviceTokens[i], notification } }
-
-        this.emit('*', event)
-        this.emit('push', event)
+        this.emit('push', { payload: { capability: 'ios', token: deviceTokens[i], notification } })
       }
     } else {
       const host = this.options.apns.sandbox ? 'https://api.sandbox.push.apple.com/3/device/' : 'https://api.push.apple.com/3/device/'
@@ -220,15 +199,10 @@ export default class PushNotifications extends EventEmitter {
 
         if (response.status !== 200) {
           const error = new Error(JSON.parse(response.body).reason)
-          const event = { event: 'error', error, payload: { capability: 'ios', token, notification } }
 
-          this.emit('*', event)
-          this.emit('error', event)
+          this.emit('error', { error, payload: { capability: 'ios', token, notification } })
         } else {
-          const event = { event: 'push', payload: { capability: 'ios', token, notification } }
-
-          this.emit('*', event)
-          this.emit('push', event)
+          this.emit('push', { payload: { capability: 'ios', token, notification } })
         }
 
         ids.push(apnsId)

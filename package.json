@@ -16,6 +16,7 @@
     "update-dependents": "umaintenance update-dependents"
   },
   "dependencies": {
+    "@universal-packages/event-emitter": "^1.1.2",
     "@universal-packages/fs-utils": "^1.0.1",
     "firebase-admin": "^11.11.0"
   },
