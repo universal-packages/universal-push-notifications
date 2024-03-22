@@ -1,6 +1,6 @@
 {
   "name": "@universal-packages/push-notifications",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Push notifications back end sender",
   "author": "David De Anda <david@universal-packages.com> (https://github.com/universal-packages)",
   "license": "MIT",
