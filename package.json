@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@universal-packages/event-emitter": "^1.1.2",
-    "@universal-packages/fs-utils": "^1.0.1",
+    "@universal-packages/fs-utils": "^1.0.3",
     "firebase-admin": "^11.11.0"
   },
   "devDependencies": {
