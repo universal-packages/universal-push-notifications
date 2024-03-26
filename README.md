@@ -109,9 +109,9 @@ Sends the notifications to all devices, tokens can come from any android or iOS 
 `PushNotifications` will emit events as follow.
 
 ```js
-expressApp.on('warning', (event) => console.log(event))
-expressApp.on('error', (event) => console.log(event))
-expressApp.on('push', (event) => console.log(event))
+pushNotifications.on('warning', (event) => console.log(event))
+pushNotifications.on('error', (event) => console.log(event))
+pushNotifications.on('push', (event) => console.log(event))
 ```
 
 ## Typescript
